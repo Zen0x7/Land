@@ -1,0 +1,24 @@
+{
+  "name": "land",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend framework using Pinia for state management",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "vite-node src/main.ts",
+    "build": "vite build",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pinia": "^2.1.7",
+    "vue": "^3.4.15"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.10",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "vite-node": "^1.2.1"
+  }
+}
