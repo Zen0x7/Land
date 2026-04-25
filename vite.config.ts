@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 import { resolve } from 'path';
@@ -20,4 +21,21 @@ export default defineConfig({
     },
   },
   plugins: [dts({ rollupTypes: true })],
+  test: {
+    globals: true,
+    environment: 'node',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'dist/',
+        '.pnp.cjs',
+        '.pnp.loader.mjs',
+        '.yarn/',
+        'eslint.config.js',
+        'vite.config.ts',
+      ],
+    },
+  },
 });
