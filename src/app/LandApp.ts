@@ -43,7 +43,7 @@ interface MutableConnectionRecord extends ClusterConnection {
 
 const nodeSocketPath = '/nodes';
 const clientSocketPath = '/clients';
-const latencyMeasureIntervalInMilliseconds = 10_000;
+const metricsSampleIntervalInMilliseconds = 1_000;
 
 interface SocketTrafficObservable {
   onAny(listener: (event: string, ...args: unknown[]) => void): void;
@@ -86,10 +86,12 @@ export class LandApp implements App {
     string,
     string
   >();
-  private readonly latencyTimerByConnectionIdentifier = new Map<
+  private readonly latencySocketByConnectionIdentifier = new Map<
     string,
-    NodeJS.Timeout
+    LatencyMeasurableSocket
   >();
+  private metricsAlignmentTimeout?: NodeJS.Timeout;
+  private metricsSampleInterval?: NodeJS.Timeout;
   private readonly eventUnsubscribeFunctions: Array<() => void> = [];
   private isRunning = false;
   private runResolver?: () => void;
@@ -173,6 +175,7 @@ export class LandApp implements App {
         this.configuration.port,
         this.configuration.host,
         () => {
+          this.startMetricsSampling();
           this.broadcastSystemTopology();
 
           if (this.configuration.seed) {
@@ -223,10 +226,7 @@ export class LandApp implements App {
 
     this.eventUnsubscribeFunctions.length = 0;
 
-    this.latencyTimerByConnectionIdentifier.forEach((latencyTimer) => {
-      clearInterval(latencyTimer);
-    });
-    this.latencyTimerByConnectionIdentifier.clear();
+    this.stopMetricsSampling();
 
     await new Promise<void>((resolve) => {
       this.nodeSocketServer.close(() => {
@@ -316,6 +316,53 @@ export class LandApp implements App {
     return existingDirectoryPath;
   }
 
+  private startMetricsSampling(): void {
+    const millisecondsToNextSecond =
+      metricsSampleIntervalInMilliseconds -
+      (Date.now() % metricsSampleIntervalInMilliseconds);
+
+    this.metricsAlignmentTimeout = setTimeout(() => {
+      this.sampleAndBroadcastConnectionMetrics();
+
+      this.metricsSampleInterval = setInterval(() => {
+        this.sampleAndBroadcastConnectionMetrics();
+      }, metricsSampleIntervalInMilliseconds);
+    }, millisecondsToNextSecond);
+  }
+
+  private stopMetricsSampling(): void {
+    if (this.metricsAlignmentTimeout) {
+      clearTimeout(this.metricsAlignmentTimeout);
+      this.metricsAlignmentTimeout = undefined;
+    }
+
+    if (this.metricsSampleInterval) {
+      clearInterval(this.metricsSampleInterval);
+      this.metricsSampleInterval = undefined;
+    }
+
+    this.latencySocketByConnectionIdentifier.clear();
+  }
+
+  private sampleAndBroadcastConnectionMetrics(): void {
+    const sampleDateInMilliseconds = Date.now();
+
+    this.connectionByIdentifier.forEach((connectionRecord) => {
+      this.refreshConnectionThroughputRates(
+        connectionRecord,
+        sampleDateInMilliseconds
+      );
+    });
+
+    this.latencySocketByConnectionIdentifier.forEach(
+      (socket, connectionIdentifier) => {
+        this.measureLatency(connectionIdentifier, socket);
+      }
+    );
+
+    this.broadcastSystemTopology();
+  }
+
   private registerNodeSocketServerHandlers(): void {
     this.nodeSocketServer.on('connection', (socket) => {
       const initialSocketIdentifier =
@@ -346,14 +393,9 @@ export class LandApp implements App {
         }
       );
 
-      this.measureLatency(connectionIdentifier, socket);
-      const latencyTimer = setInterval(() => {
-        this.measureLatency(connectionIdentifier, socket);
-      }, latencyMeasureIntervalInMilliseconds);
-
-      this.latencyTimerByConnectionIdentifier.set(
+      this.latencySocketByConnectionIdentifier.set(
         connectionIdentifier,
-        latencyTimer
+        socket
       );
 
       socket.on('disconnect', () => {
@@ -361,12 +403,7 @@ export class LandApp implements App {
         socket.off(REGISTRATION_EVENT, registerHandler);
         this.updateConnectionStatus(connectionIdentifier, 'disconnected');
 
-        const registeredLatencyTimer =
-          this.latencyTimerByConnectionIdentifier.get(connectionIdentifier);
-        if (registeredLatencyTimer) {
-          clearInterval(registeredLatencyTimer);
-          this.latencyTimerByConnectionIdentifier.delete(connectionIdentifier);
-        }
+        this.latencySocketByConnectionIdentifier.delete(connectionIdentifier);
 
         unregisterSocketTrafficObservers();
       });
@@ -467,6 +504,11 @@ export class LandApp implements App {
         status: 'connecting',
       });
 
+      this.latencySocketByConnectionIdentifier.set(
+        connectionIdentifier,
+        socket
+      );
+
       const onConnect = (): void => {
         this.refreshSocketIdentifier(
           connectionIdentifier,
@@ -486,14 +528,6 @@ export class LandApp implements App {
         } satisfies NodeRegistrationPayload);
 
         this.measureLatency(connectionIdentifier, socket);
-        const latencyTimer = setInterval(() => {
-          this.measureLatency(connectionIdentifier, socket);
-        }, latencyMeasureIntervalInMilliseconds);
-
-        this.latencyTimerByConnectionIdentifier.set(
-          connectionIdentifier,
-          latencyTimer
-        );
       };
 
       const onDiscovery = (discoveryNodes: KnownNode[]): void => {
@@ -519,12 +553,7 @@ export class LandApp implements App {
         activeSocketSet.delete(socket);
         this.updateConnectionStatus(connectionIdentifier, 'disconnected');
 
-        const latencyTimer =
-          this.latencyTimerByConnectionIdentifier.get(connectionIdentifier);
-        if (latencyTimer) {
-          clearInterval(latencyTimer);
-          this.latencyTimerByConnectionIdentifier.delete(connectionIdentifier);
-        }
+        this.latencySocketByConnectionIdentifier.delete(connectionIdentifier);
 
         unregisterSocketTrafficObservers();
       };
@@ -756,47 +785,58 @@ export class LandApp implements App {
       (connectionRecord.metrics.totalWrittenBytes / 1024 / 1024).toFixed(6)
     );
 
-    const nowInMilliseconds = Date.now();
-    const elapsedMilliseconds =
-      nowInMilliseconds - connectionRecord.lastThroughputCalculatedAt;
-
-    if (elapsedMilliseconds > 0) {
-      const elapsedSeconds = elapsedMilliseconds / 1000;
-      const readBytesSinceLastSnapshot =
-        connectionRecord.metrics.totalReadBytes -
-        connectionRecord.lastReadBytesSnapshot;
-      const writtenBytesSinceLastSnapshot =
-        connectionRecord.metrics.totalWrittenBytes -
-        connectionRecord.lastWrittenBytesSnapshot;
-
-      connectionRecord.metrics.readBytesPerSecond = Number(
-        (readBytesSinceLastSnapshot / elapsedSeconds).toFixed(4)
-      );
-      connectionRecord.metrics.writeBytesPerSecond = Number(
-        (writtenBytesSinceLastSnapshot / elapsedSeconds).toFixed(4)
-      );
-      connectionRecord.metrics.readKilobytesPerSecond = Number(
-        (connectionRecord.metrics.readBytesPerSecond / 1024).toFixed(4)
-      );
-      connectionRecord.metrics.writeKilobytesPerSecond = Number(
-        (connectionRecord.metrics.writeBytesPerSecond / 1024).toFixed(4)
-      );
-      connectionRecord.metrics.readMegabytesPerSecond = Number(
-        (connectionRecord.metrics.readBytesPerSecond / 1024 / 1024).toFixed(6)
-      );
-      connectionRecord.metrics.writeMegabytesPerSecond = Number(
-        (connectionRecord.metrics.writeBytesPerSecond / 1024 / 1024).toFixed(6)
-      );
-
-      connectionRecord.lastReadBytesSnapshot =
-        connectionRecord.metrics.totalReadBytes;
-      connectionRecord.lastWrittenBytesSnapshot =
-        connectionRecord.metrics.totalWrittenBytes;
-      connectionRecord.lastThroughputCalculatedAt = nowInMilliseconds;
-    }
+    this.refreshConnectionThroughputRates(connectionRecord, Date.now());
 
     connectionRecord.updatedAt = new Date().toISOString();
     this.broadcastSystemTopology();
+  }
+
+  private refreshConnectionThroughputRates(
+    connectionRecord: MutableConnectionRecord,
+    sampleDateInMilliseconds: number
+  ): void {
+    const elapsedMilliseconds =
+      sampleDateInMilliseconds - connectionRecord.lastThroughputCalculatedAt;
+
+    if (elapsedMilliseconds <= 0) {
+      return;
+    }
+
+    const elapsedSeconds = elapsedMilliseconds / 1000;
+    const readBytesSinceLastSnapshot =
+      connectionRecord.metrics.totalReadBytes -
+      connectionRecord.lastReadBytesSnapshot;
+    const writtenBytesSinceLastSnapshot =
+      connectionRecord.metrics.totalWrittenBytes -
+      connectionRecord.lastWrittenBytesSnapshot;
+
+    connectionRecord.metrics.readBytesPerSecond = Number(
+      (readBytesSinceLastSnapshot / elapsedSeconds).toFixed(4)
+    );
+    connectionRecord.metrics.writeBytesPerSecond = Number(
+      (writtenBytesSinceLastSnapshot / elapsedSeconds).toFixed(4)
+    );
+    connectionRecord.metrics.readKilobytesPerSecond = Number(
+      (connectionRecord.metrics.readBytesPerSecond / 1024).toFixed(4)
+    );
+    connectionRecord.metrics.writeKilobytesPerSecond = Number(
+      (connectionRecord.metrics.writeBytesPerSecond / 1024).toFixed(4)
+    );
+    connectionRecord.metrics.readMegabytesPerSecond = Number(
+      (connectionRecord.metrics.readBytesPerSecond / 1024 / 1024).toFixed(6)
+    );
+    connectionRecord.metrics.writeMegabytesPerSecond = Number(
+      (connectionRecord.metrics.writeBytesPerSecond / 1024 / 1024).toFixed(6)
+    );
+
+    connectionRecord.lastReadBytesSnapshot =
+      connectionRecord.metrics.totalReadBytes;
+    connectionRecord.lastWrittenBytesSnapshot =
+      connectionRecord.metrics.totalWrittenBytes;
+    connectionRecord.lastThroughputCalculatedAt = sampleDateInMilliseconds;
+    connectionRecord.updatedAt = new Date(
+      sampleDateInMilliseconds
+    ).toISOString();
   }
 
   private measureLatency(
