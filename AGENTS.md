@@ -31,6 +31,7 @@ Welcome, Maintainer. This document serves as the primary guide for developing an
 ## 5. Documentation
 
 - **VitePress Documentation**: Every change or new feature must be accompanied by updates or new pages in the VitePress documentation.
+- **Language Requirement**: All documentation and developer-facing written content in this repository must be written in English.
 - **Clarity**: Ensure documentation is clear, accurate, and reflects the latest state of the framework.
 
 ## 6. Prohibitions
