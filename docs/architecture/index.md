@@ -33,7 +33,7 @@ The runtime is organized by domain and responsibility:
 - `src/events` and `src/shared`: event constants and shared utilities.
 - `src/system/admin`: dedicated TypeScript administration application with isolated components, Pinia stores, and chart modules.
 - `src/system/public/assets`: static CSS and static HTML entrypoint served from `/system`.
-- `dist/system/public/assets/admin`: generated JavaScript output compiled from the TypeScript admin application.
+- `dist/system/public/assets/admin`: generated JavaScript output bundled from the TypeScript admin application.
 
 This keeps node clustering behavior maintainable as new domains are introduced.
 
@@ -97,6 +97,8 @@ The `/system` panel is now structured as a modular admin application:
 - **Panels** (`system/admin/components/panels/*`): independent dashboard and node-detail views.
 - **Chart components** (`system/admin/components/charts/*`): reusable visualizations for global and per-connection bandwidth.
 - **Formatting utilities** (`system/admin/utilities/formatters.ts`): consistent metrics formatting.
+
+Admin assets are bundled during `yarn build` with `vite.system-admin.config.ts`, so the browser consumes first-party `/system/assets/admin/*` files (no CDN runtime dependency for Vue/Pinia/Socket.IO modules).
 
 The topology payload includes the local node in `nodes[]` (`isLocalNode: true`), which guarantees that a 3-node cluster renders all 3 nodes in every panel instance.
 

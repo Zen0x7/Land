@@ -1,10 +1,10 @@
-import { BandwidthDonutChart } from '../charts/BandwidthDonutChart.js';
-import { ConnectionBarChart } from '../charts/ConnectionBarChart.js';
+import { BandwidthDonutChart } from '../charts/BandwidthDonutChart';
+import { ConnectionBarChart } from '../charts/ConnectionBarChart';
 import {
   formatKilobytesPerSecond,
   formatMegabytes,
   formatMilliseconds,
-} from '../../utilities/formatters.js';
+} from '../../utilities/formatters';
 
 export const DashboardPanel = {
   components: {

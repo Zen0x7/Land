@@ -1,4 +1,4 @@
-import type { ClusterConnection } from '../../types/topologyTypes.js';
+import type { ClusterConnection } from '../../types/topologyTypes';
 
 interface ChartRow extends ClusterConnection {
   combinedBandwidth: number;

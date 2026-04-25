@@ -1,14 +1,11 @@
-import {
-  computed,
-  ref,
-} from 'https://unpkg.com/vue@3.5.22/dist/vue.esm-browser.prod.js';
-import { defineStore } from 'https://unpkg.com/pinia@3.0.4/dist/pinia.esm-browser.prod.js';
-import { io } from 'https://cdn.socket.io/4.8.3/socket.io.esm.min.js';
+import { computed, ref } from 'vue';
+import { defineStore } from 'pinia';
+import { io } from 'socket.io-client';
 import type {
   ClusterConnection,
   NodeSummary,
   TopologySnapshot,
-} from '../types/topologyTypes.js';
+} from '../types/topologyTypes';
 
 const socketClientPath = '/clients';
 const systemTopologyUpdatedEvent = 'SystemTopologyUpdated';

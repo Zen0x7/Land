@@ -1,13 +1,9 @@
-import {
-  createApp,
-  onBeforeUnmount,
-  onMounted,
-} from 'https://unpkg.com/vue@3.5.22/dist/vue.esm-browser.prod.js';
-import { createPinia } from 'https://unpkg.com/pinia@3.0.4/dist/pinia.esm-browser.prod.js';
-import { useTopologyStore } from './stores/topologyStore.js';
-import { DashboardPanel } from './components/panels/DashboardPanel.js';
-import { NodeDetailPanel } from './components/panels/NodeDetailPanel.js';
-import { formatNodeAddress } from './utilities/formatters.js';
+import { createApp, onBeforeUnmount, onMounted } from 'vue';
+import { createPinia } from 'pinia';
+import { useTopologyStore } from './stores/topologyStore';
+import { DashboardPanel } from './components/panels/DashboardPanel';
+import { NodeDetailPanel } from './components/panels/NodeDetailPanel';
+import { formatNodeAddress } from './utilities/formatters';
 
 const application = createApp({
   components: {

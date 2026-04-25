@@ -1,11 +1,11 @@
-import { ConnectionBarChart } from '../charts/ConnectionBarChart.js';
+import { ConnectionBarChart } from '../charts/ConnectionBarChart';
 import {
   formatKilobytesPerSecond,
   formatMegabytes,
   formatMilliseconds,
   formatTimestamp,
-} from '../../utilities/formatters.js';
-import type { ClusterConnection } from '../../types/topologyTypes.js';
+} from '../../utilities/formatters';
+import type { ClusterConnection } from '../../types/topologyTypes';
 
 export const NodeDetailPanel = {
   components: {
