@@ -904,6 +904,17 @@ export class LandApp implements App {
     const connections = this.getConnectionList();
     const nodesByIdentifier = new Map<string, KnownNode>();
 
+    nodesByIdentifier.set(this.configuration.id, {
+      id: this.configuration.id,
+      name: this.configuration.name,
+      host: this.configuration.host,
+      port: this.configuration.port,
+      metadata: {
+        maximumAcceptedConnections:
+          this.configuration.maximumAcceptedConnections,
+      },
+    });
+
     for (const node of this.getKnownNodes()) {
       nodesByIdentifier.set(node.id, node);
     }
@@ -923,7 +934,15 @@ export class LandApp implements App {
     }
 
     const nodes = Array.from(nodesByIdentifier.values()).map((node) => {
+      const isLocalNode = node.id === this.configuration.id;
       const incomingConnections = connections.filter((connection) => {
+        if (isLocalNode) {
+          return (
+            connection.localNodeIdentifier === node.id &&
+            connection.direction === 'incoming'
+          );
+        }
+
         return (
           connection.remoteNodeIdentifier === node.id &&
           connection.direction === 'incoming'
@@ -931,6 +950,13 @@ export class LandApp implements App {
       });
 
       const outgoingConnections = connections.filter((connection) => {
+        if (isLocalNode) {
+          return (
+            connection.localNodeIdentifier === node.id &&
+            connection.direction === 'outgoing'
+          );
+        }
+
         return (
           connection.remoteNodeIdentifier === node.id &&
           connection.direction === 'outgoing'
@@ -942,6 +968,7 @@ export class LandApp implements App {
         name: node.name,
         host: node.host,
         port: node.port,
+        isLocalNode,
         metadata: {
           maximumAcceptedConnections: node.metadata.maximumAcceptedConnections,
         },
