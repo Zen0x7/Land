@@ -9,7 +9,7 @@
     "noEmit": false,
     "declaration": false,
     "sourceMap": false,
-    "outDir": "src/system/public/assets/admin",
+    "outDir": "dist/system/public/assets/admin",
     "rootDir": "src/system/admin"
   },
   "include": ["src/system/admin/**/*.ts", "src/system/admin/**/*.d.ts"]

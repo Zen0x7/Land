@@ -32,7 +32,8 @@ The runtime is organized by domain and responsibility:
 - `src/store`: Pinia stores using the Composition API (`defineStore(id, () => {})`).
 - `src/events` and `src/shared`: event constants and shared utilities.
 - `src/system/admin`: dedicated TypeScript administration application with isolated components, Pinia stores, and chart modules.
-- `src/system/public/assets`: static CSS plus generated admin JavaScript served from `/system`.
+- `src/system/public/assets`: static CSS and static HTML entrypoint served from `/system`.
+- `dist/system/public/assets/admin`: generated JavaScript output compiled from the TypeScript admin application.
 
 This keeps node clustering behavior maintainable as new domains are introduced.
 

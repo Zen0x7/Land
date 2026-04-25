@@ -295,14 +295,22 @@ export class LandApp implements App {
 
   private resolveSystemPublicDirectoryPath(): string {
     const candidateDirectoryPaths = [
-      join(process.cwd(), 'src/system/public'),
       join(process.cwd(), 'dist/system/public'),
+      join(process.cwd(), 'src/system/public'),
       join(process.cwd(), 'system/public'),
     ];
 
     const existingDirectoryPath = candidateDirectoryPaths.find(
       (directoryPath) => {
-        return existsSync(directoryPath);
+        const requiredFilePaths = [
+          join(directoryPath, 'index.html'),
+          join(directoryPath, 'assets/system-admin.css'),
+          join(directoryPath, 'assets/admin/main.js'),
+        ];
+
+        return requiredFilePaths.every((requiredFilePath) => {
+          return existsSync(requiredFilePath);
+        });
       }
     );
 

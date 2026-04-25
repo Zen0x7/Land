@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && rm -rf src/system/public/assets/admin && tsc -p tsconfig.system-admin.json && node scripts/copy-system-assets.mjs",
+    "build": "tsc && vite build && node scripts/copy-system-assets.mjs && tsc -p tsconfig.system-admin.json",
     "preview": "vite preview",
     "format": "prettier --write .",
     "lint": "eslint .",
