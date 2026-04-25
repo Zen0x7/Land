@@ -66,6 +66,7 @@ const application = createApp({
             :network-metrics="topologyStore.networkMetrics"
             :node-metrics-rows="topologyStore.nodeMetricsRows"
             :connections="topologyStore.connections"
+            :resolve-connection-bandwidth-history="topologyStore.getConnectionBandwidthHistory"
           />
 
           <NodeDetailPanel

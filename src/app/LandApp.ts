@@ -92,6 +92,7 @@ export class LandApp implements App {
   >();
   private metricsSampleCronJob?: CronJob;
   private readonly eventUnsubscribeFunctions: Array<() => void> = [];
+  private hasPendingTopologyBroadcast = false;
   private isRunning = false;
   private runResolver?: () => void;
 
@@ -362,7 +363,8 @@ export class LandApp implements App {
       }
     );
 
-    this.broadcastSystemTopology();
+    this.markTopologyBroadcastAsPending();
+    this.broadcastSystemTopologyIfPending();
   }
 
   private registerNodeSocketServerHandlers(): void {
@@ -453,7 +455,7 @@ export class LandApp implements App {
 
     socket.emit(DISCOVERY_EVENT, discoveryNodes);
 
-    this.broadcastSystemTopology();
+    this.markTopologyBroadcastAsPending();
     this.connectToKnownNode(knownNode);
   }
 
@@ -538,7 +540,7 @@ export class LandApp implements App {
           this.connectToKnownNode(discoveredNode);
         });
 
-        this.broadcastSystemTopology();
+        this.markTopologyBroadcastAsPending();
       };
 
       const onLatencyPing = (
@@ -631,7 +633,7 @@ export class LandApp implements App {
       connectionIdentifier
     );
 
-    this.broadcastSystemTopology();
+    this.markTopologyBroadcastAsPending();
 
     return connectionIdentifier;
   }
@@ -656,7 +658,7 @@ export class LandApp implements App {
         connectionIdentifier
       );
       connectionRecord.updatedAt = new Date().toISOString();
-      this.broadcastSystemTopology();
+      this.markTopologyBroadcastAsPending();
     }
   }
 
@@ -677,7 +679,7 @@ export class LandApp implements App {
       connectionRecord.connectedAt = connectionRecord.updatedAt;
     }
 
-    this.broadcastSystemTopology();
+    this.markTopologyBroadcastAsPending();
   }
 
   private updateConnectionRemoteNode(
@@ -696,7 +698,7 @@ export class LandApp implements App {
     connectionRecord.remotePort = node.port;
     connectionRecord.updatedAt = new Date().toISOString();
 
-    this.broadcastSystemTopology();
+    this.markTopologyBroadcastAsPending();
   }
 
   private registerSocketTrafficObservers(
@@ -790,7 +792,7 @@ export class LandApp implements App {
     this.refreshConnectionThroughputRates(connectionRecord, Date.now());
 
     connectionRecord.updatedAt = new Date().toISOString();
-    this.broadcastSystemTopology();
+    this.markTopologyBroadcastAsPending();
   }
 
   private refreshConnectionThroughputRates(
@@ -882,9 +884,21 @@ export class LandApp implements App {
           ).toISOString();
           connectionRecord.updatedAt = new Date().toISOString();
 
-          this.broadcastSystemTopology();
+          this.markTopologyBroadcastAsPending();
         }
       );
+  }
+
+  private markTopologyBroadcastAsPending(): void {
+    this.hasPendingTopologyBroadcast = true;
+  }
+
+  private broadcastSystemTopologyIfPending(): void {
+    if (!this.hasPendingTopologyBroadcast) {
+      return;
+    }
+
+    this.broadcastSystemTopology();
   }
 
   private getConnectionList(): ClusterConnection[] {
@@ -1001,6 +1015,7 @@ export class LandApp implements App {
   }
 
   private broadcastSystemTopology(): void {
+    this.hasPendingTopologyBroadcast = false;
     this.clientSocketServer.emit(
       SYSTEM_TOPOLOGY_UPDATED_EVENT,
       this.createTopologySnapshot()

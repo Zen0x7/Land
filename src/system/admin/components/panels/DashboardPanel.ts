@@ -1,15 +1,20 @@
 import { BandwidthDonutChart } from '../charts/BandwidthDonutChart';
-import { ConnectionBarChart } from '../charts/ConnectionBarChart';
+import { ConnectionLineChart } from '../charts/ConnectionLineChart';
 import {
   formatKilobytesPerSecond,
   formatMegabytes,
   formatMilliseconds,
 } from '../../utilities/formatters';
 
+interface ConnectionBandwidthHistoryPoint {
+  timestamp: string;
+  bandwidthKilobytesPerSecond: number;
+}
+
 export const DashboardPanel = {
   components: {
     BandwidthDonutChart,
-    ConnectionBarChart,
+    ConnectionLineChart,
   },
   props: {
     networkMetrics: {
@@ -24,11 +29,23 @@ export const DashboardPanel = {
       type: Array,
       required: true,
     },
+    resolveConnectionBandwidthHistory: {
+      type: Function,
+      required: true,
+    },
   },
   methods: {
     formatKilobytesPerSecond,
     formatMegabytes,
     formatMilliseconds,
+    getConnectionHistory(
+      connectionIdentifier: string
+    ): ConnectionBandwidthHistoryPoint[] {
+      const resolver = this.resolveConnectionBandwidthHistory as (
+        connectionIdentifier: string
+      ) => ConnectionBandwidthHistoryPoint[];
+      return resolver(connectionIdentifier);
+    },
   },
   template: `
     <section class="surface dashboard-panel">
@@ -66,8 +83,24 @@ export const DashboardPanel = {
         </article>
 
         <article class="surface-block">
-          <h3>Node bandwidth ranking</h3>
-          <ConnectionBarChart :connections="connections" />
+          <h3>All connection timelines</h3>
+          <div class="connection-timeline-grid">
+            <div
+              v-for="connection in connections"
+              :key="connection.id"
+              class="connection-timeline-card"
+            >
+              <header>
+                <strong>{{ connection.remoteNodeName }}</strong>
+                <small>
+                  {{ connection.remoteHost }}:{{ connection.remotePort }} · {{ connection.direction }}
+                </small>
+              </header>
+              <ConnectionLineChart
+                :history-points="getConnectionHistory(connection.id)"
+              />
+            </div>
+          </div>
         </article>
       </div>
 

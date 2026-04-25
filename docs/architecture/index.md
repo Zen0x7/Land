@@ -88,6 +88,7 @@ The app exposes:
 - `GET /system`: static Vue administration panel.
 
 Live updates are broadcast as `SystemTopologyUpdated` on Socket.IO `path: /clients`.
+Topology updates for dashboard clients are throttled to the metrics sampling cadence (once per second), preventing event storms from per-message traffic updates.
 
 ## Administration panel architecture
 
