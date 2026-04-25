@@ -1,4 +1,8 @@
-import { createApp, onBeforeUnmount, onMounted } from 'vue';
+import {
+  createApp,
+  onBeforeUnmount,
+  onMounted,
+} from 'vue/dist/vue.esm-bundler.js';
 import { createPinia } from 'pinia';
 import { useTopologyStore } from './stores/topologyStore';
 import { DashboardPanel } from './components/panels/DashboardPanel';

@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, ref } from 'vue/dist/vue.esm-bundler.js';
 import { defineStore } from 'pinia';
 import { io } from 'socket.io-client';
 import type {
