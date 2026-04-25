@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 
-const runtimeDependencyPackages = ['express', 'socket.io'] as const;
+const runtimeDependencyPackages = ['cron', 'express', 'socket.io'] as const;
 const browserPeerDependencyPackages = ['pinia', 'vue'] as const;
 const externalPackages = [
   ...runtimeDependencyPackages,
