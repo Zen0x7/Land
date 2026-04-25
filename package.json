@@ -2,7 +2,7 @@
   "name": "Land",
   "version": "0.0.1",
   "type": "module",
-  "main": "./dist/land.umd.cjs",
+  "main": "./dist/land.cjs",
   "module": "./dist/land.js",
   "types": "./dist/land.d.ts",
   "files": [

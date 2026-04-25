@@ -21,6 +21,10 @@ At this initial stage, `App` contains internally:
 
 Currently, Socket.IO is mounted on the HTTP server used by Express, so both parts run in the same process and port.
 
+## Runtime target
+
+Land is packaged as a **Node.js runtime library**. Build configuration keeps Node core modules and runtime dependencies (`express` and `socket.io`) external so the browser bundler does not attempt to polyfill server modules.
+
 ## Lifecycle
 
 `run()` starts the server and keeps the process running.

@@ -1,22 +1,41 @@
 /// <reference types="vitest" />
+import { builtinModules } from 'node:module';
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
-import { resolve } from 'path';
+
+const runtimeDependencyPackages = ['express', 'socket.io'] as const;
+const browserPeerDependencyPackages = ['pinia', 'vue'] as const;
+const externalPackages = [
+  ...runtimeDependencyPackages,
+  ...browserPeerDependencyPackages,
+];
+const nodeBuiltinModuleSpecifiers = new Set<string>([
+  ...builtinModules,
+  ...builtinModules.map(
+    (builtinModuleSpecifier) => `node:${builtinModuleSpecifier}`
+  ),
+]);
 
 export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/main.ts'),
       name: 'Land',
-      fileName: 'land',
+      formats: ['es', 'cjs'],
+      fileName: (format) => (format === 'es' ? 'land.js' : 'land.cjs'),
     },
     rollupOptions: {
-      external: ['pinia', 'vue'],
-      output: {
-        globals: {
-          pinia: 'Pinia',
-          vue: 'Vue',
-        },
+      external: (moduleSpecifier) => {
+        if (nodeBuiltinModuleSpecifiers.has(moduleSpecifier)) {
+          return true;
+        }
+
+        return externalPackages.some(
+          (externalPackageName) =>
+            moduleSpecifier === externalPackageName ||
+            moduleSpecifier.startsWith(`${externalPackageName}/`)
+        );
       },
     },
   },
