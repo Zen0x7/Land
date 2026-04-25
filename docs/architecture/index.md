@@ -2,9 +2,9 @@
 
 ## App
 
-`App` es la abstracción principal de ejecución de Land.
+`App` is Land's main runtime abstraction.
 
-Se crea con `createApp()`:
+It is created with `createApp()`:
 
 ```ts
 import { createApp, type App } from 'land';
@@ -14,15 +14,15 @@ const app: App = createApp();
 await app.run();
 ```
 
-En este estado inicial, `App` contiene internamente:
+At this initial stage, `App` contains internally:
 
-- una instancia de **Express**;
-- una instancia de **Socket.IO**.
+- one **Express** instance;
+- one **Socket.IO** instance.
 
-Actualmente, Socket.IO se monta sobre el servidor HTTP usado por Express, por lo que ambas partes se ejecutan dentro del mismo proceso y puerto.
+Currently, Socket.IO is mounted on the HTTP server used by Express, so both parts run in the same process and port.
 
 ## Lifecycle
 
-`run()` inicia el servidor y mantiene el proceso activo.
+`run()` starts the server and keeps the process running.
 
-El proceso puede detenerse con señales del sistema como `SIGINT` (por ejemplo, `Ctrl + C`) o llamando `app.stop()`.
+The process can be stopped with system signals such as `SIGINT` (for example, `Ctrl + C`) or by calling `app.stop()`.
