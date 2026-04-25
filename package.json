@@ -19,7 +19,8 @@
     "test:coverage": "vitest run --coverage",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "cluster:three": "yarn build && node run-three-node-cluster.mjs"
   },
   "packageManager": "yarn@4.10.3",
   "dependencies": {

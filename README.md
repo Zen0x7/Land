@@ -50,6 +50,16 @@ Every node serves a static Vue-based administration panel at `/system`.
 
 Each connection tracks sidecar metrics: status, last latency, average latency, and sample count.
 
+## Run a local three-node cluster demo
+
+To quickly test node discovery and the `/system` dashboard on different ports, run:
+
+```bash
+yarn cluster:three
+```
+
+This script starts three nodes on `127.0.0.1` ports `4100`, `4101`, and `4102`, with seeded chaining so they discover each other.
+
 ## Documentation
 
 - [Get Started](./docs/get-started/index.md)
