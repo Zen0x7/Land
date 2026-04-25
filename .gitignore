@@ -19,3 +19,7 @@ node_modules
 # Build artifacts
 dist
 coverage
+
+# VitePress artifacts
+docs/.vitepress/dist
+docs/.vitepress/cache

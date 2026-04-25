@@ -27,6 +27,8 @@ export default tseslint.config(
   {
     ignores: [
       'dist/',
+      '.vitepress/',
+      'docs/.vitepress/',
       'node_modules/',
       '.pnp.cjs',
       '.pnp.loader.mjs',
