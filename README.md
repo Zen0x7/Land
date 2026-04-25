@@ -38,6 +38,18 @@ When connected, every node:
 
 Socket.IO heartbeat (`pingInterval` and `pingTimeout`) is used to keep connections active.
 
+## System administration panel
+
+Every node serves a static Vue-based administration panel at `/system`.
+
+- `/system/api/topology`: global nodes + connections snapshot.
+- `/system/api/nodes`: hierarchical nodes with inbound/outbound connections.
+- `/system/api/connections`: flat connection list.
+- Socket.IO node traffic uses `path: /nodes`.
+- Live panel updates use a dedicated Socket.IO server on `path: /clients`.
+
+Each connection tracks sidecar metrics: status, last latency, average latency, and sample count.
+
 ## Documentation
 
 - [Get Started](./docs/get-started/index.md)

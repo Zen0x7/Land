@@ -34,3 +34,17 @@ const configuration: AppConfiguration = {
 ```
 
 `id` must be a UUID v4. After startup, the node will register itself on the seed and participate in discovery.
+
+## Open the system administration panel
+
+After running a node, open:
+
+- `http://<host>:<port>/system`
+
+The panel first fetches data from:
+
+- `/system/api/topology`
+- `/system/api/nodes`
+- `/system/api/connections`
+
+Then it subscribes to live topology updates through Socket.IO `path: /clients`.
