@@ -1,0 +1,7 @@
+{
+  "name": "Land",
+  "packageManager": "yarn@4.10.3",
+  "dependencies": {
+    "pinia": "^3.0.4"
+  }
+}
