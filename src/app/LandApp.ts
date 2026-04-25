@@ -1,4 +1,5 @@
 import express, { type Express, type Request, type Response } from 'express';
+import { CronJob } from 'cron';
 import { existsSync } from 'node:fs';
 import { createServer, type Server as HttpServer } from 'node:http';
 import { join } from 'node:path';
@@ -43,7 +44,6 @@ interface MutableConnectionRecord extends ClusterConnection {
 
 const nodeSocketPath = '/nodes';
 const clientSocketPath = '/clients';
-const metricsSampleIntervalInMilliseconds = 1_000;
 
 interface SocketTrafficObservable {
   onAny(listener: (event: string, ...args: unknown[]) => void): void;
@@ -90,8 +90,7 @@ export class LandApp implements App {
     string,
     LatencyMeasurableSocket
   >();
-  private metricsAlignmentTimeout?: NodeJS.Timeout;
-  private metricsSampleInterval?: NodeJS.Timeout;
+  private metricsSampleCronJob?: CronJob;
   private readonly eventUnsubscribeFunctions: Array<() => void> = [];
   private isRunning = false;
   private runResolver?: () => void;
@@ -317,28 +316,23 @@ export class LandApp implements App {
   }
 
   private startMetricsSampling(): void {
-    const millisecondsToNextSecond =
-      metricsSampleIntervalInMilliseconds -
-      (Date.now() % metricsSampleIntervalInMilliseconds);
+    if (this.metricsSampleCronJob) {
+      return;
+    }
 
-    this.metricsAlignmentTimeout = setTimeout(() => {
-      this.sampleAndBroadcastConnectionMetrics();
-
-      this.metricsSampleInterval = setInterval(() => {
+    this.metricsSampleCronJob = CronJob.from({
+      cronTime: '* * * * * *',
+      onTick: () => {
         this.sampleAndBroadcastConnectionMetrics();
-      }, metricsSampleIntervalInMilliseconds);
-    }, millisecondsToNextSecond);
+      },
+      start: true,
+    });
   }
 
   private stopMetricsSampling(): void {
-    if (this.metricsAlignmentTimeout) {
-      clearTimeout(this.metricsAlignmentTimeout);
-      this.metricsAlignmentTimeout = undefined;
-    }
-
-    if (this.metricsSampleInterval) {
-      clearInterval(this.metricsSampleInterval);
-      this.metricsSampleInterval = undefined;
+    if (this.metricsSampleCronJob) {
+      this.metricsSampleCronJob.stop();
+      this.metricsSampleCronJob = undefined;
     }
 
     this.latencySocketByConnectionIdentifier.clear();

@@ -74,7 +74,7 @@ Every connection record tracks:
 - read/write totals (bytes, kilobytes, megabytes);
 - read/write throughput per second (bytes/s, KB/s, MB/s).
 
-Latency and throughput sampling are aligned to one-second boundaries. Latency is measured using a dedicated `LatencyPing` event and acknowledgements over node sockets, for both incoming and outgoing connection records.
+Latency and throughput sampling are executed by a per-second cron job (`* * * * * *`). Latency is measured using a dedicated `LatencyPing` event and acknowledgements over node sockets, for both incoming and outgoing connection records.
 
 ## System administration surfaces
 
