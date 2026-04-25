@@ -21,6 +21,18 @@ const app: App = createApp(configuration);
 await app.run();
 ```
 
+## Source layout
+
+The runtime is organized by domain and responsibility:
+
+- `src/app`: application runtime contracts and `LandApp` implementation.
+- `src/configuration`: app-level configuration schemas.
+- `src/domain/node`: node registration and discovery domain types.
+- `src/store`: Pinia stores using the Composition API (`defineStore(id, () => {})`).
+- `src/events` and `src/shared`: event constants and shared utilities.
+
+This keeps node clustering behavior maintainable as new domains are introduced.
+
 ## Runtime components
 
 Every `App` instance creates:
