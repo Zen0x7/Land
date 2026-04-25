@@ -7,6 +7,18 @@ export interface ConnectionMetrics {
   averageLatencyInMilliseconds: number | null;
   sampleCount: number;
   lastMeasuredAt: string | null;
+  totalReadBytes: number;
+  totalWrittenBytes: number;
+  totalReadKilobytes: number;
+  totalWrittenKilobytes: number;
+  totalReadMegabytes: number;
+  totalWrittenMegabytes: number;
+  readBytesPerSecond: number;
+  writeBytesPerSecond: number;
+  readKilobytesPerSecond: number;
+  writeKilobytesPerSecond: number;
+  readMegabytesPerSecond: number;
+  writeMegabytesPerSecond: number;
 }
 
 export interface ClusterConnection {

@@ -48,7 +48,7 @@ Every node serves a static Vue-based administration panel at `/system`.
 - Socket.IO node traffic uses `path: /nodes`.
 - Live panel updates use a dedicated Socket.IO server on `path: /clients`.
 
-Each connection tracks sidecar metrics: status, last latency, average latency, and sample count.
+Each connection tracks sidecar metrics: status, last latency, average latency, sample count, read/write totals (bytes/KB/MB), and read/write rates per second.
 
 `yarn build` also copies `/system` static assets into `dist/system/public` so the dashboard works from compiled output.
 

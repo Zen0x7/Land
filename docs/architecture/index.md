@@ -70,7 +70,9 @@ Every connection record tracks:
 - direction (`incoming` or `outgoing`);
 - status (`connecting`, `connected`, `disconnected`);
 - last measured latency;
-- average latency and sample count.
+- average latency and sample count;
+- read/write totals (bytes, kilobytes, megabytes);
+- read/write throughput per second (bytes/s, KB/s, MB/s).
 
 Latency is measured using a dedicated `LatencyPing` event and acknowledgements over node sockets, for both incoming and outgoing connection records.
 

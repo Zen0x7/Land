@@ -161,6 +161,10 @@ createApp({
                 <th>Latency</th>
                 <th>Average</th>
                 <th>Samples</th>
+                <th>Read</th>
+                <th>Write</th>
+                <th>Total Read</th>
+                <th>Total Write</th>
               </tr>
             </thead>
             <tbody>
@@ -178,9 +182,13 @@ createApp({
                 <td>{{ connection.metrics.lastLatencyInMilliseconds ?? '-' }} ms</td>
                 <td>{{ connection.metrics.averageLatencyInMilliseconds ?? '-' }} ms</td>
                 <td>{{ connection.metrics.sampleCount }}</td>
+                <td>{{ connection.metrics.readKilobytesPerSecond.toFixed(3) }} KB/s</td>
+                <td>{{ connection.metrics.writeKilobytesPerSecond.toFixed(3) }} KB/s</td>
+                <td>{{ connection.metrics.totalReadMegabytes.toFixed(4) }} MB</td>
+                <td>{{ connection.metrics.totalWrittenMegabytes.toFixed(4) }} MB</td>
               </tr>
               <tr v-if="displayedConnections.length === 0">
-                <td colspan="6">No connections available for this view.</td>
+                <td colspan="10">No connections available for this view.</td>
               </tr>
             </tbody>
           </table>

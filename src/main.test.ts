@@ -231,12 +231,18 @@ describe('createApp', () => {
           (connection: {
             status: string;
             direction: string;
-            metrics: { sampleCount: number };
+            metrics: {
+              sampleCount: number;
+              totalReadBytes: number;
+              totalWrittenBytes: number;
+            };
           }) => {
             return (
               connection.direction === 'outgoing' &&
               ['connected', 'disconnected'].includes(connection.status) &&
-              connection.metrics.sampleCount >= 1
+              connection.metrics.sampleCount >= 1 &&
+              connection.metrics.totalReadBytes > 0 &&
+              connection.metrics.totalWrittenBytes > 0
             );
           }
         )
@@ -247,12 +253,18 @@ describe('createApp', () => {
           (connection: {
             status: string;
             direction: string;
-            metrics: { sampleCount: number };
+            metrics: {
+              sampleCount: number;
+              totalReadBytes: number;
+              totalWrittenBytes: number;
+            };
           }) => {
             return (
               connection.direction === 'incoming' &&
               ['connected', 'disconnected'].includes(connection.status) &&
-              connection.metrics.sampleCount >= 1
+              connection.metrics.sampleCount >= 1 &&
+              connection.metrics.totalReadBytes > 0 &&
+              connection.metrics.totalWrittenBytes > 0
             );
           }
         )
