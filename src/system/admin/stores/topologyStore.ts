@@ -4,23 +4,36 @@ import {
 } from 'https://unpkg.com/vue@3.5.22/dist/vue.esm-browser.prod.js';
 import { defineStore } from 'https://unpkg.com/pinia@3.0.4/dist/pinia.esm-browser.prod.js';
 import { io } from 'https://cdn.socket.io/4.8.3/socket.io.esm.min.js';
+import type {
+  ClusterConnection,
+  NodeSummary,
+  TopologySnapshot,
+} from '../types/topologyTypes.js';
 
 const socketClientPath = '/clients';
 const systemTopologyUpdatedEvent = 'SystemTopologyUpdated';
 
-const getConnectionCombinedThroughput = (connection) => {
+const getConnectionCombinedThroughput = (
+  connection: ClusterConnection
+): number => {
   return (
     connection.metrics.readKilobytesPerSecond +
     connection.metrics.writeKilobytesPerSecond
   );
 };
 
+interface NodeMetricsRow extends NodeSummary {
+  totalBandwidthKilobytesPerSecond: number;
+  totalTransferredMegabytes: number;
+  totalConnections: number;
+}
+
 export const useTopologyStore = defineStore('topology', () => {
-  const topologySnapshot = ref(null);
-  const selectedNodeIdentifier = ref(null);
-  const selectedConnectionIdentifier = ref(null);
+  const topologySnapshot = ref<TopologySnapshot | null>(null);
+  const selectedNodeIdentifier = ref<string | null>(null);
+  const selectedConnectionIdentifier = ref<string | null>(null);
   const statusMessage = ref('Loading topology...');
-  const socketClient = ref(null);
+  const socketClient = ref<ReturnType<typeof io> | null>(null);
 
   const nodes = computed(() => topologySnapshot.value?.nodes ?? []);
   const connections = computed(() => topologySnapshot.value?.connections ?? []);
@@ -39,7 +52,7 @@ export const useTopologyStore = defineStore('topology', () => {
 
   const selectedNodeConnections = computed(() => {
     if (!selectedNode.value) {
-      return [];
+      return [] as ClusterConnection[];
     }
 
     return [
@@ -103,7 +116,7 @@ export const useTopologyStore = defineStore('topology', () => {
     };
   });
 
-  const nodeMetricsRows = computed(() => {
+  const nodeMetricsRows = computed<NodeMetricsRow[]>(() => {
     return nodes.value.map((node) => {
       const nodeConnections = [
         ...node.incomingConnections,
@@ -133,7 +146,7 @@ export const useTopologyStore = defineStore('topology', () => {
   });
 
   const connectionsByNodeIdentifier = computed(() => {
-    const groupedConnections = new Map();
+    const groupedConnections = new Map<string, ClusterConnection[]>();
 
     for (const node of nodes.value) {
       groupedConnections.set(node.id, [
@@ -145,7 +158,10 @@ export const useTopologyStore = defineStore('topology', () => {
     return groupedConnections;
   });
 
-  const applySnapshot = (snapshot, statusPrefix) => {
+  const applySnapshot = (
+    snapshot: TopologySnapshot,
+    statusPrefix: string
+  ): void => {
     topologySnapshot.value = snapshot;
 
     if (!selectedNodeIdentifier.value && snapshot.nodes.length > 0) {
@@ -162,8 +178,9 @@ export const useTopologyStore = defineStore('topology', () => {
 
     if (selectedConnectionIdentifier.value) {
       const selectedConnections =
-        connectionsByNodeIdentifier.value.get(selectedNodeIdentifier.value) ??
-        [];
+        connectionsByNodeIdentifier.value.get(
+          selectedNodeIdentifier.value ?? ''
+        ) ?? [];
 
       if (
         !selectedConnections.some(
@@ -177,34 +194,34 @@ export const useTopologyStore = defineStore('topology', () => {
     statusMessage.value = `${statusPrefix}: ${new Date(snapshot.generatedAt).toLocaleTimeString()}`;
   };
 
-  const loadTopology = async () => {
+  const loadTopology = async (): Promise<void> => {
     const response = await fetch('/system/api/topology');
-    const snapshot = await response.json();
+    const snapshot = (await response.json()) as TopologySnapshot;
     applySnapshot(snapshot, 'Updated');
   };
 
-  const connectLiveUpdates = () => {
+  const connectLiveUpdates = (): void => {
     socketClient.value = io({
       path: socketClientPath,
       transports: ['websocket'],
     });
 
     socketClient.value.on(systemTopologyUpdatedEvent, (snapshot) => {
-      applySnapshot(snapshot, 'Live update');
+      applySnapshot(snapshot as TopologySnapshot, 'Live update');
     });
   };
 
-  const disconnectLiveUpdates = () => {
+  const disconnectLiveUpdates = (): void => {
     socketClient.value?.disconnect();
     socketClient.value = null;
   };
 
-  const selectNode = (nodeIdentifier) => {
+  const selectNode = (nodeIdentifier: string): void => {
     selectedNodeIdentifier.value = nodeIdentifier;
     selectedConnectionIdentifier.value = null;
   };
 
-  const selectConnection = (connectionIdentifier) => {
+  const selectConnection = (connectionIdentifier: string): void => {
     selectedConnectionIdentifier.value = connectionIdentifier;
   };
 

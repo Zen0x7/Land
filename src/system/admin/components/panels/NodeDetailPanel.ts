@@ -5,6 +5,7 @@ import {
   formatMilliseconds,
   formatTimestamp,
 } from '../../utilities/formatters.js';
+import type { ClusterConnection } from '../../types/topologyTypes.js';
 
 export const NodeDetailPanel = {
   components: {
@@ -26,12 +27,18 @@ export const NodeDetailPanel = {
   },
   emits: ['select-connection'],
   computed: {
-    selectedNodeMetrics() {
-      const readKilobytesPerSecond = this.selectedNodeConnections.reduce(
+    selectedNodeMetrics(): {
+      readKilobytesPerSecond: number;
+      writeKilobytesPerSecond: number;
+      totalKilobytesPerSecond: number;
+    } {
+      const selectedNodeConnections = this
+        .selectedNodeConnections as ClusterConnection[];
+      const readKilobytesPerSecond = selectedNodeConnections.reduce(
         (sum, connection) => sum + connection.metrics.readKilobytesPerSecond,
         0
       );
-      const writeKilobytesPerSecond = this.selectedNodeConnections.reduce(
+      const writeKilobytesPerSecond = selectedNodeConnections.reduce(
         (sum, connection) => sum + connection.metrics.writeKilobytesPerSecond,
         0
       );

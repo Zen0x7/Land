@@ -1,3 +1,10 @@
+import type { ClusterConnection } from '../../types/topologyTypes.js';
+
+interface ChartRow extends ClusterConnection {
+  combinedBandwidth: number;
+  percentage: number;
+}
+
 export const ConnectionBarChart = {
   props: {
     connections: {
@@ -6,8 +13,10 @@ export const ConnectionBarChart = {
     },
   },
   computed: {
-    chartRows() {
-      const maximumValue = this.connections.reduce((maximum, connection) => {
+    chartRows(): ChartRow[] {
+      const connections = this.connections as ClusterConnection[];
+
+      const maximumValue = connections.reduce((maximum, connection) => {
         const value =
           connection.metrics.readKilobytesPerSecond +
           connection.metrics.writeKilobytesPerSecond;
@@ -15,7 +24,7 @@ export const ConnectionBarChart = {
         return Math.max(maximum, value);
       }, 0);
 
-      return this.connections.map((connection) => {
+      return connections.map((connection) => {
         const combinedBandwidth =
           connection.metrics.readKilobytesPerSecond +
           connection.metrics.writeKilobytesPerSecond;

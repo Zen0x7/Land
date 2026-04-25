@@ -31,8 +31,8 @@ The runtime is organized by domain and responsibility:
 - `src/domain/connection`: topology connection and metrics types.
 - `src/store`: Pinia stores using the Composition API (`defineStore(id, () => {})`).
 - `src/events` and `src/shared`: event constants and shared utilities.
-- `src/system/public/admin`: dedicated administration application with isolated components, Pinia stores, and chart modules.
-- `src/system/public/assets`: entrypoint assets (`system-admin.js`, `system-admin.css`) served from `/system`.
+- `src/system/admin`: dedicated TypeScript administration application with isolated components, Pinia stores, and chart modules.
+- `src/system/public/assets`: static CSS plus generated admin JavaScript served from `/system`.
 
 This keeps node clustering behavior maintainable as new domains are introduced.
 
@@ -92,10 +92,10 @@ Live updates are broadcast as `SystemTopologyUpdated` on Socket.IO `path: /clien
 
 The `/system` panel is now structured as a modular admin application:
 
-- **Store layer** (`admin/stores/topologyStore.js`): centralizes topology state, node selection, connection selection, and live socket updates.
-- **Panels** (`admin/components/panels/*`): independent dashboard and node-detail views.
-- **Chart components** (`admin/components/charts/*`): reusable visualizations for global and per-connection bandwidth.
-- **Formatting utilities** (`admin/utilities/formatters.js`): consistent metrics formatting.
+- **Store layer** (`system/admin/stores/topologyStore.ts`): centralizes topology state, node selection, connection selection, and live socket updates.
+- **Panels** (`system/admin/components/panels/*`): independent dashboard and node-detail views.
+- **Chart components** (`system/admin/components/charts/*`): reusable visualizations for global and per-connection bandwidth.
+- **Formatting utilities** (`system/admin/utilities/formatters.ts`): consistent metrics formatting.
 
 The topology payload includes the local node in `nodes[]` (`isLocalNode: true`), which guarantees that a 3-node cluster renders all 3 nodes in every panel instance.
 

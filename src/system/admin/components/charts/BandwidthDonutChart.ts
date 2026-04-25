@@ -10,17 +10,17 @@ export const BandwidthDonutChart = {
     },
   },
   computed: {
-    totalKilobytesPerSecond() {
+    totalKilobytesPerSecond(): number {
       return this.readKilobytesPerSecond + this.writeKilobytesPerSecond;
     },
-    readPercentage() {
+    readPercentage(): number {
       if (this.totalKilobytesPerSecond === 0) {
         return 0;
       }
 
       return (this.readKilobytesPerSecond / this.totalKilobytesPerSecond) * 100;
     },
-    writePercentage() {
+    writePercentage(): number {
       if (this.totalKilobytesPerSecond === 0) {
         return 0;
       }
@@ -29,11 +29,11 @@ export const BandwidthDonutChart = {
         (this.writeKilobytesPerSecond / this.totalKilobytesPerSecond) * 100
       );
     },
-    readStrokeDasharray() {
+    readStrokeDasharray(): string {
       const circumference = 2 * Math.PI * 52;
       return `${(this.readPercentage / 100) * circumference} ${circumference}`;
     },
-    writeStrokeDasharray() {
+    writeStrokeDasharray(): string {
       const circumference = 2 * Math.PI * 52;
       return `${(this.writePercentage / 100) * circumference} ${circumference}`;
     },

@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM"],
+    "strict": false,
+    "skipLibCheck": true,
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false,
+    "outDir": "src/system/public/assets/admin",
+    "rootDir": "src/system/admin"
+  },
+  "include": ["src/system/admin/**/*.ts", "src/system/admin/**/*.d.ts"]
+}
