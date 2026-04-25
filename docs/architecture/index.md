@@ -72,7 +72,7 @@ Every connection record tracks:
 - last measured latency;
 - average latency and sample count.
 
-Latency is measured using a dedicated `LatencyPing` event and acknowledgements over node sockets.
+Latency is measured using a dedicated `LatencyPing` event and acknowledgements over node sockets, for both incoming and outgoing connection records.
 
 ## System administration surfaces
 

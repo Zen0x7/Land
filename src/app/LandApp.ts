@@ -42,6 +42,20 @@ const nodeSocketPath = '/nodes';
 const clientSocketPath = '/clients';
 const latencyMeasureIntervalInMilliseconds = 10_000;
 
+interface LatencyMeasurableSocket {
+  connected: boolean;
+  timeout(milliseconds: number): {
+    emit(
+      event: string,
+      sentDateInMilliseconds: number,
+      callback: (
+        error: Error | null,
+        responseDateInMilliseconds?: number
+      ) => void
+    ): void;
+  };
+}
+
 export class LandApp implements App {
   private readonly configuration: AppConfiguration;
   private readonly expressApplication: Express;
@@ -319,10 +333,27 @@ export class LandApp implements App {
         }
       );
 
+      this.measureLatency(connectionIdentifier, socket);
+      const latencyTimer = setInterval(() => {
+        this.measureLatency(connectionIdentifier, socket);
+      }, latencyMeasureIntervalInMilliseconds);
+
+      this.latencyTimerByConnectionIdentifier.set(
+        connectionIdentifier,
+        latencyTimer
+      );
+
       socket.on('disconnect', () => {
         this.registeredIncomingSocketIdentifiers.delete(socket.id);
         socket.off(REGISTRATION_EVENT, registerHandler);
         this.updateConnectionStatus(connectionIdentifier, 'disconnected');
+
+        const registeredLatencyTimer =
+          this.latencyTimerByConnectionIdentifier.get(connectionIdentifier);
+        if (registeredLatencyTimer) {
+          clearInterval(registeredLatencyTimer);
+          this.latencyTimerByConnectionIdentifier.delete(connectionIdentifier);
+        }
       });
     });
   }
@@ -459,6 +490,13 @@ export class LandApp implements App {
         this.broadcastSystemTopology();
       };
 
+      const onLatencyPing = (
+        _sentDateInMilliseconds: number,
+        acknowledge: (dateInMilliseconds: number) => void
+      ): void => {
+        acknowledge(Date.now());
+      };
+
       const onDisconnect = (): void => {
         activeSocketSet.delete(socket);
         this.updateConnectionStatus(connectionIdentifier, 'disconnected');
@@ -473,11 +511,13 @@ export class LandApp implements App {
 
       socket.on('connect', onConnect);
       socket.on(DISCOVERY_EVENT, onDiscovery);
+      socket.on(LATENCY_PING_EVENT, onLatencyPing);
       socket.on('disconnect', onDisconnect);
 
       const unsubscribe = (): void => {
         socket.off('connect', onConnect);
         socket.off(DISCOVERY_EVENT, onDiscovery);
+        socket.off(LATENCY_PING_EVENT, onLatencyPing);
         socket.off('disconnect', onDisconnect);
       };
 
@@ -595,7 +635,7 @@ export class LandApp implements App {
 
   private measureLatency(
     connectionIdentifier: string,
-    socket: SocketIoClientSocket
+    socket: LatencyMeasurableSocket
   ): void {
     if (!socket.connected) {
       return;

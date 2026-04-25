@@ -241,6 +241,22 @@ describe('createApp', () => {
           }
         )
       ).toBe(true);
+
+      expect(
+        connections.some(
+          (connection: {
+            status: string;
+            direction: string;
+            metrics: { sampleCount: number };
+          }) => {
+            return (
+              connection.direction === 'incoming' &&
+              ['connected', 'disconnected'].includes(connection.status) &&
+              connection.metrics.sampleCount >= 1
+            );
+          }
+        )
+      ).toBe(true);
     });
 
     clientSocket.disconnect();
