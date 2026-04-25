@@ -1,4 +1,4 @@
-import { ConnectionBarChart } from '../charts/ConnectionBarChart';
+import { ConnectionLineChart } from '../charts/ConnectionLineChart';
 import {
   formatKilobytesPerSecond,
   formatMegabytes,
@@ -7,9 +7,14 @@ import {
 } from '../../utilities/formatters';
 import type { ClusterConnection } from '../../types/topologyTypes';
 
+interface ConnectionBandwidthHistoryPoint {
+  timestamp: string;
+  bandwidthKilobytesPerSecond: number;
+}
+
 export const NodeDetailPanel = {
   components: {
-    ConnectionBarChart,
+    ConnectionLineChart,
   },
   props: {
     selectedNode: {
@@ -23,6 +28,10 @@ export const NodeDetailPanel = {
     selectedConnection: {
       type: Object,
       default: null,
+    },
+    resolveConnectionBandwidthHistory: {
+      type: Function,
+      required: true,
     },
   },
   emits: ['select-connection'],
@@ -56,6 +65,14 @@ export const NodeDetailPanel = {
     formatMegabytes,
     formatMilliseconds,
     formatTimestamp,
+    getConnectionHistory(
+      connectionIdentifier: string
+    ): ConnectionBandwidthHistoryPoint[] {
+      const resolver = this.resolveConnectionBandwidthHistory as (
+        connectionIdentifier: string
+      ) => ConnectionBandwidthHistoryPoint[];
+      return resolver(connectionIdentifier);
+    },
   },
   template: `
     <section class="surface node-detail-panel">
@@ -84,8 +101,24 @@ export const NodeDetailPanel = {
       </div>
 
       <article class="surface-block" v-if="selectedNode">
-        <h3>Bandwidth per connection</h3>
-        <ConnectionBarChart :connections="selectedNodeConnections" />
+        <h3>Connection timeline (bandwidth horizon)</h3>
+        <div class="connection-timeline-grid">
+          <div
+            v-for="connection in selectedNodeConnections"
+            :key="connection.id"
+            class="connection-timeline-card"
+          >
+            <header>
+              <strong>{{ connection.remoteNodeName }}</strong>
+              <small>
+                {{ connection.remoteHost }}:{{ connection.remotePort }} · {{ connection.direction }}
+              </small>
+            </header>
+            <ConnectionLineChart
+              :history-points="getConnectionHistory(connection.id)"
+            />
+          </div>
+        </div>
       </article>
 
       <article class="surface-block" v-if="selectedNode">
@@ -95,6 +128,8 @@ export const NodeDetailPanel = {
             <tr>
               <th>Direction</th>
               <th>Remote Node</th>
+              <th>Remote IP</th>
+              <th>Remote Port</th>
               <th>Status</th>
               <th>Last Latency</th>
               <th>Average Latency</th>
@@ -115,8 +150,9 @@ export const NodeDetailPanel = {
               <td>{{ connection.direction }}</td>
               <td>
                 <strong>{{ connection.remoteNodeName }}</strong>
-                <small>{{ connection.remoteHost }}:{{ connection.remotePort }}</small>
               </td>
+              <td>{{ connection.remoteHost }}</td>
+              <td>{{ connection.remotePort }}</td>
               <td><span class="status-pill" :class="'status-' + connection.status">{{ connection.status }}</span></td>
               <td>{{ formatMilliseconds(connection.metrics.lastLatencyInMilliseconds) }}</td>
               <td>{{ formatMilliseconds(connection.metrics.averageLatencyInMilliseconds) }}</td>
@@ -126,7 +162,7 @@ export const NodeDetailPanel = {
               <td>{{ formatMegabytes(connection.metrics.totalWrittenMegabytes) }}</td>
             </tr>
             <tr v-if="selectedNodeConnections.length === 0">
-              <td colspan="9">No connections found for this node.</td>
+              <td colspan="11">No connections found for this node.</td>
             </tr>
           </tbody>
         </table>

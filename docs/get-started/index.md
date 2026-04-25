@@ -69,4 +69,6 @@ Each panel now includes:
 
 - a global dashboard with total network bandwidth metrics and charts;
 - a node list that always includes the local node;
-- a per-node detail surface with connection table and per-connection bandwidth visualization.
+- a per-node detail surface with:
+  - per-connection timeline line charts (bandwidth horizon);
+  - connection table columns including remote IP and remote port.

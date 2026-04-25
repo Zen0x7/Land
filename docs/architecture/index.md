@@ -100,6 +100,8 @@ The `/system` panel is now structured as a modular admin application:
 
 Admin assets are bundled during `yarn build` with `vite.system-admin.config.ts`, so the browser consumes first-party `/system/assets/admin/*` files (no CDN runtime dependency for Vue/Pinia/Socket.IO modules).
 
+The store also keeps a rolling per-connection bandwidth history window, used by node-detail line charts to visualize throughput evolution over time.
+
 The topology payload includes the local node in `nodes[]` (`isLocalNode: true`), which guarantees that a 3-node cluster renders all 3 nodes in every panel instance.
 
 ## Lifecycle

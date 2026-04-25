@@ -25,12 +25,20 @@ interface NodeMetricsRow extends NodeSummary {
   totalConnections: number;
 }
 
+interface ConnectionBandwidthHistoryPoint {
+  timestamp: string;
+  bandwidthKilobytesPerSecond: number;
+}
+
 export const useTopologyStore = defineStore('topology', () => {
   const topologySnapshot = ref<TopologySnapshot | null>(null);
   const selectedNodeIdentifier = ref<string | null>(null);
   const selectedConnectionIdentifier = ref<string | null>(null);
   const statusMessage = ref('Loading topology...');
   const socketClient = ref<ReturnType<typeof io> | null>(null);
+  const connectionBandwidthHistoryByIdentifier = ref(
+    new Map<string, ConnectionBandwidthHistoryPoint[]>()
+  );
 
   const nodes = computed(() => topologySnapshot.value?.nodes ?? []);
   const connections = computed(() => topologySnapshot.value?.connections ?? []);
@@ -160,6 +168,37 @@ export const useTopologyStore = defineStore('topology', () => {
     statusPrefix: string
   ): void => {
     topologySnapshot.value = snapshot;
+    const retainedConnectionIdentifiers = new Set<string>();
+
+    for (const connection of snapshot.connections) {
+      retainedConnectionIdentifiers.add(connection.id);
+      const previousHistoryPoints =
+        connectionBandwidthHistoryByIdentifier.value.get(connection.id) ?? [];
+      const historyPoint: ConnectionBandwidthHistoryPoint = {
+        timestamp: snapshot.generatedAt,
+        bandwidthKilobytesPerSecond:
+          connection.metrics.readKilobytesPerSecond +
+          connection.metrics.writeKilobytesPerSecond,
+      };
+
+      const recentHistoryPoints = [
+        ...previousHistoryPoints,
+        historyPoint,
+      ].slice(-30);
+
+      connectionBandwidthHistoryByIdentifier.value.set(
+        connection.id,
+        recentHistoryPoints
+      );
+    }
+
+    for (const connectionIdentifier of connectionBandwidthHistoryByIdentifier.value.keys()) {
+      if (!retainedConnectionIdentifiers.has(connectionIdentifier)) {
+        connectionBandwidthHistoryByIdentifier.value.delete(
+          connectionIdentifier
+        );
+      }
+    }
 
     if (!selectedNodeIdentifier.value && snapshot.nodes.length > 0) {
       const localNode = snapshot.nodes.find((node) => node.isLocalNode);
@@ -222,6 +261,15 @@ export const useTopologyStore = defineStore('topology', () => {
     selectedConnectionIdentifier.value = connectionIdentifier;
   };
 
+  const getConnectionBandwidthHistory = (
+    connectionIdentifier: string
+  ): ConnectionBandwidthHistoryPoint[] => {
+    return (
+      connectionBandwidthHistoryByIdentifier.value.get(connectionIdentifier) ??
+      []
+    );
+  };
+
   return {
     topologySnapshot,
     statusMessage,
@@ -238,5 +286,6 @@ export const useTopologyStore = defineStore('topology', () => {
     disconnectLiveUpdates,
     selectNode,
     selectConnection,
+    getConnectionBandwidthHistory,
   };
 });

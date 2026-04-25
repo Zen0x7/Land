@@ -72,6 +72,7 @@ const application = createApp({
             :selected-node="topologyStore.selectedNode"
             :selected-node-connections="topologyStore.selectedNodeConnections"
             :selected-connection="topologyStore.selectedConnection"
+            :resolve-connection-bandwidth-history="topologyStore.getConnectionBandwidthHistory"
             @select-connection="topologyStore.selectConnection"
           />
         </section>
