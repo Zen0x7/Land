@@ -1,7 +1,27 @@
 {
   "name": "Land",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/land.umd.cjs",
+  "module": "./dist/land.js",
+  "types": "./dist/land.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "format": "prettier --write ."
+  },
   "packageManager": "yarn@4.10.3",
   "dependencies": {
     "pinia": "^3.0.4"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10",
+    "vite-plugin-dts": "^4.5.4"
   }
 }
