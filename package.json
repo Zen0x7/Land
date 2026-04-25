@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node scripts/copy-system-assets.mjs",
     "preview": "vite preview",
     "format": "prettier --write .",
     "lint": "eslint .",
@@ -19,10 +19,12 @@
     "test:coverage": "vitest run --coverage",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "cluster:three": "yarn build && node run-three-node-cluster.mjs"
   },
   "packageManager": "yarn@4.10.3",
   "dependencies": {
+    "cron": "^4.4.0",
     "express": "^5.2.1",
     "pinia": "^3.0.4",
     "socket.io": "^4.8.3",

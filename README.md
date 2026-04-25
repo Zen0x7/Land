@@ -38,6 +38,30 @@ When connected, every node:
 
 Socket.IO heartbeat (`pingInterval` and `pingTimeout`) is used to keep connections active.
 
+## System administration panel
+
+Every node serves a static Vue-based administration panel at `/system`.
+
+- `/system/api/topology`: global nodes + connections snapshot.
+- `/system/api/nodes`: hierarchical nodes with inbound/outbound connections.
+- `/system/api/connections`: flat connection list.
+- Socket.IO node traffic uses `path: /nodes`.
+- Live panel updates use a dedicated Socket.IO server on `path: /clients`.
+
+Each connection tracks sidecar metrics: status, last latency, average latency, sample count, read/write totals (bytes/KB/MB), and read/write rates per second. Sampling is triggered every second by a cron scheduler.
+
+`yarn build` also copies `/system` static assets into `dist/system/public` so the dashboard works from compiled output.
+
+## Run a local three-node cluster demo
+
+To quickly test node discovery and the `/system` dashboard on different ports, run:
+
+```bash
+yarn cluster:three
+```
+
+This script starts three nodes on `127.0.0.1` ports `4100`, `4101`, and `4102`, with seeded chaining so they discover each other.
+
 ## Documentation
 
 - [Get Started](./docs/get-started/index.md)

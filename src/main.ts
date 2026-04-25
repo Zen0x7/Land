@@ -9,6 +9,11 @@ import type {
   NodeRegistrationPayload,
   KnownNode,
 } from './domain/node/nodeTypes';
+import type {
+  ClusterConnection,
+  TopologySnapshot,
+  NodeConnectionSummary,
+} from './domain/connection/connectionTypes';
 
 export type {
   App,
@@ -17,6 +22,9 @@ export type {
   NodeRegistrationMetadata,
   NodeRegistrationPayload,
   KnownNode,
+  ClusterConnection,
+  TopologySnapshot,
+  NodeConnectionSummary,
 };
 
 export const createApp = (configuration: AppConfiguration): App => {
