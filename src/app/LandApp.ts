@@ -92,6 +92,7 @@ export class LandApp implements App {
   >();
   private metricsSampleCronJob?: CronJob;
   private readonly eventUnsubscribeFunctions: Array<() => void> = [];
+  private hasPendingTopologyBroadcast = false;
   private isRunning = false;
   private runResolver?: () => void;
 
@@ -295,14 +296,22 @@ export class LandApp implements App {
 
   private resolveSystemPublicDirectoryPath(): string {
     const candidateDirectoryPaths = [
-      join(process.cwd(), 'src/system/public'),
       join(process.cwd(), 'dist/system/public'),
+      join(process.cwd(), 'src/system/public'),
       join(process.cwd(), 'system/public'),
     ];
 
     const existingDirectoryPath = candidateDirectoryPaths.find(
       (directoryPath) => {
-        return existsSync(directoryPath);
+        const requiredFilePaths = [
+          join(directoryPath, 'index.html'),
+          join(directoryPath, 'assets/system-admin.css'),
+          join(directoryPath, 'assets/admin/main.js'),
+        ];
+
+        return requiredFilePaths.every((requiredFilePath) => {
+          return existsSync(requiredFilePath);
+        });
       }
     );
 
@@ -354,7 +363,8 @@ export class LandApp implements App {
       }
     );
 
-    this.broadcastSystemTopology();
+    this.markTopologyBroadcastAsPending();
+    this.broadcastSystemTopologyIfPending();
   }
 
   private registerNodeSocketServerHandlers(): void {
@@ -445,7 +455,7 @@ export class LandApp implements App {
 
     socket.emit(DISCOVERY_EVENT, discoveryNodes);
 
-    this.broadcastSystemTopology();
+    this.markTopologyBroadcastAsPending();
     this.connectToKnownNode(knownNode);
   }
 
@@ -530,7 +540,7 @@ export class LandApp implements App {
           this.connectToKnownNode(discoveredNode);
         });
 
-        this.broadcastSystemTopology();
+        this.markTopologyBroadcastAsPending();
       };
 
       const onLatencyPing = (
@@ -623,7 +633,7 @@ export class LandApp implements App {
       connectionIdentifier
     );
 
-    this.broadcastSystemTopology();
+    this.markTopologyBroadcastAsPending();
 
     return connectionIdentifier;
   }
@@ -648,7 +658,7 @@ export class LandApp implements App {
         connectionIdentifier
       );
       connectionRecord.updatedAt = new Date().toISOString();
-      this.broadcastSystemTopology();
+      this.markTopologyBroadcastAsPending();
     }
   }
 
@@ -669,7 +679,7 @@ export class LandApp implements App {
       connectionRecord.connectedAt = connectionRecord.updatedAt;
     }
 
-    this.broadcastSystemTopology();
+    this.markTopologyBroadcastAsPending();
   }
 
   private updateConnectionRemoteNode(
@@ -688,7 +698,7 @@ export class LandApp implements App {
     connectionRecord.remotePort = node.port;
     connectionRecord.updatedAt = new Date().toISOString();
 
-    this.broadcastSystemTopology();
+    this.markTopologyBroadcastAsPending();
   }
 
   private registerSocketTrafficObservers(
@@ -782,7 +792,7 @@ export class LandApp implements App {
     this.refreshConnectionThroughputRates(connectionRecord, Date.now());
 
     connectionRecord.updatedAt = new Date().toISOString();
-    this.broadcastSystemTopology();
+    this.markTopologyBroadcastAsPending();
   }
 
   private refreshConnectionThroughputRates(
@@ -874,9 +884,21 @@ export class LandApp implements App {
           ).toISOString();
           connectionRecord.updatedAt = new Date().toISOString();
 
-          this.broadcastSystemTopology();
+          this.markTopologyBroadcastAsPending();
         }
       );
+  }
+
+  private markTopologyBroadcastAsPending(): void {
+    this.hasPendingTopologyBroadcast = true;
+  }
+
+  private broadcastSystemTopologyIfPending(): void {
+    if (!this.hasPendingTopologyBroadcast) {
+      return;
+    }
+
+    this.broadcastSystemTopology();
   }
 
   private getConnectionList(): ClusterConnection[] {
@@ -904,6 +926,17 @@ export class LandApp implements App {
     const connections = this.getConnectionList();
     const nodesByIdentifier = new Map<string, KnownNode>();
 
+    nodesByIdentifier.set(this.configuration.id, {
+      id: this.configuration.id,
+      name: this.configuration.name,
+      host: this.configuration.host,
+      port: this.configuration.port,
+      metadata: {
+        maximumAcceptedConnections:
+          this.configuration.maximumAcceptedConnections,
+      },
+    });
+
     for (const node of this.getKnownNodes()) {
       nodesByIdentifier.set(node.id, node);
     }
@@ -923,7 +956,15 @@ export class LandApp implements App {
     }
 
     const nodes = Array.from(nodesByIdentifier.values()).map((node) => {
+      const isLocalNode = node.id === this.configuration.id;
       const incomingConnections = connections.filter((connection) => {
+        if (isLocalNode) {
+          return (
+            connection.localNodeIdentifier === node.id &&
+            connection.direction === 'incoming'
+          );
+        }
+
         return (
           connection.remoteNodeIdentifier === node.id &&
           connection.direction === 'incoming'
@@ -931,6 +972,13 @@ export class LandApp implements App {
       });
 
       const outgoingConnections = connections.filter((connection) => {
+        if (isLocalNode) {
+          return (
+            connection.localNodeIdentifier === node.id &&
+            connection.direction === 'outgoing'
+          );
+        }
+
         return (
           connection.remoteNodeIdentifier === node.id &&
           connection.direction === 'outgoing'
@@ -942,6 +990,7 @@ export class LandApp implements App {
         name: node.name,
         host: node.host,
         port: node.port,
+        isLocalNode,
         metadata: {
           maximumAcceptedConnections: node.metadata.maximumAcceptedConnections,
         },
@@ -966,6 +1015,7 @@ export class LandApp implements App {
   }
 
   private broadcastSystemTopology(): void {
+    this.hasPendingTopologyBroadcast = false;
     this.clientSocketServer.emit(
       SYSTEM_TOPOLOGY_UPDATED_EVENT,
       this.createTopologySnapshot()

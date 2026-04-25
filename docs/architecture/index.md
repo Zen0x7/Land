@@ -31,7 +31,9 @@ The runtime is organized by domain and responsibility:
 - `src/domain/connection`: topology connection and metrics types.
 - `src/store`: Pinia stores using the Composition API (`defineStore(id, () => {})`).
 - `src/events` and `src/shared`: event constants and shared utilities.
-- `src/system/public`: static Vue administration panel assets served from `/system`.
+- `src/system/admin`: dedicated TypeScript administration application with isolated components, Pinia stores, and chart modules.
+- `src/system/public/assets`: static CSS and static HTML entrypoint served from `/system`.
+- `dist/system/public/assets/admin`: generated JavaScript output bundled from the TypeScript admin application.
 
 This keeps node clustering behavior maintainable as new domains are introduced.
 
@@ -86,6 +88,22 @@ The app exposes:
 - `GET /system`: static Vue administration panel.
 
 Live updates are broadcast as `SystemTopologyUpdated` on Socket.IO `path: /clients`.
+Topology updates for dashboard clients are throttled to the metrics sampling cadence (once per second), preventing event storms from per-message traffic updates.
+
+## Administration panel architecture
+
+The `/system` panel is now structured as a modular admin application:
+
+- **Store layer** (`system/admin/stores/topologyStore.ts`): centralizes topology state, node selection, connection selection, and live socket updates.
+- **Panels** (`system/admin/components/panels/*`): independent dashboard and node-detail views.
+- **Chart components** (`system/admin/components/charts/*`): reusable visualizations for global and per-connection bandwidth.
+- **Formatting utilities** (`system/admin/utilities/formatters.ts`): consistent metrics formatting.
+
+Admin assets are bundled during `yarn build` with `vite.system-admin.config.ts`, so the browser consumes first-party `/system/assets/admin/*` files (no CDN runtime dependency for Vue/Pinia/Socket.IO modules).
+
+The store also keeps a rolling per-connection bandwidth history window, used by node-detail line charts to visualize throughput evolution over time.
+
+The topology payload includes the local node in `nodes[]` (`isLocalNode: true`), which guarantees that a 3-node cluster renders all 3 nodes in every panel instance.
 
 ## Lifecycle
 

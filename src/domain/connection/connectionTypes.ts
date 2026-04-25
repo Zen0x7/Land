@@ -41,6 +41,7 @@ export interface NodeConnectionSummary {
   name: string;
   host: string;
   port: number;
+  isLocalNode: boolean;
   metadata: {
     maximumAcceptedConnections: number;
   };

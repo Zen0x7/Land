@@ -64,3 +64,12 @@ This launches three connected nodes on:
 - `http://127.0.0.1:4102/system`
 
 Use these URLs in separate browser tabs to compare node and connection topology updates in real time.
+
+Each panel now includes:
+
+- a global dashboard with total network bandwidth metrics and charts;
+  - includes line timelines for every connection shown in the main panel;
+- a node list that always includes the local node;
+- a per-node detail surface with:
+  - per-connection timeline line charts (bandwidth horizon);
+  - connection table columns including remote IP and remote port.
