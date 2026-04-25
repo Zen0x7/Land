@@ -50,6 +50,8 @@ Every node serves a static Vue-based administration panel at `/system`.
 
 Each connection tracks sidecar metrics: status, last latency, average latency, and sample count.
 
+`yarn build` also copies `/system` static assets into `dist/system/public` so the dashboard works from compiled output.
+
 ## Run a local three-node cluster demo
 
 To quickly test node discovery and the `/system` dashboard on different ports, run:

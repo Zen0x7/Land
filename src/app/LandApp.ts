@@ -1,7 +1,7 @@
 import express, { type Express, type Request, type Response } from 'express';
+import { existsSync } from 'node:fs';
 import { createServer, type Server as HttpServer } from 'node:http';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { createPinia, setActivePinia } from 'pinia';
 import {
   io as createSocketIoClient,
@@ -235,12 +235,7 @@ export class LandApp implements App {
   }
 
   private registerSystemRoutes(): void {
-    const currentFilePath = fileURLToPath(import.meta.url);
-    const currentDirectoryPath = dirname(currentFilePath);
-    const systemPublicDirectoryPath = join(
-      currentDirectoryPath,
-      '../system/public'
-    );
+    const systemPublicDirectoryPath = this.resolveSystemPublicDirectoryPath();
 
     this.expressApplication.get(
       '/system/api/topology',
@@ -273,6 +268,28 @@ export class LandApp implements App {
         response.sendFile(join(systemPublicDirectoryPath, 'index.html'));
       }
     );
+  }
+
+  private resolveSystemPublicDirectoryPath(): string {
+    const candidateDirectoryPaths = [
+      join(process.cwd(), 'src/system/public'),
+      join(process.cwd(), 'dist/system/public'),
+      join(process.cwd(), 'system/public'),
+    ];
+
+    const existingDirectoryPath = candidateDirectoryPaths.find(
+      (directoryPath) => {
+        return existsSync(directoryPath);
+      }
+    );
+
+    if (!existingDirectoryPath) {
+      throw new Error(
+        `Unable to find system public assets. Checked: ${candidateDirectoryPaths.join(', ')}`
+      );
+    }
+
+    return existingDirectoryPath;
   }
 
   private registerNodeSocketServerHandlers(): void {
